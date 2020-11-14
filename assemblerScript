@@ -1,0 +1,47 @@
+;can be assembled here: https://hlorenzi.github.io/customasm/web/
+
+#ruledef
+{
+    set {bank} {byte} {value}   => 0x01 @ bank`8 @ byte`8 @ value`8
+    cp {banks} {byte1} {byte2}  => 0x02 @ banks`8 @ byte1`8 @ byte2`8
+	add {banks} {byte1} {byte2} => 0x03 @ banks`8 @ byte1`8 @ byte2`8
+	spr {bank} {byte} {mode}    => 0x04 @ bank`8 @ byte`8 @ mode`8
+}
+
+;Set command usage:
+;set 0x<bank> <byte> <value>
+;parameter bank: a num, 0-9, specifies the bank to write to
+;parameter byte: a num, 0-255, specifies the byte to set in specified bank
+;parameter value: a num, 0-255, specifies the value to set the byte to
+set 0x0 0 5
+
+;Copy command usage:
+;cp 0x<bank1><bank2> <byte1> <byte2>
+;parameter bank1: a num, 0-9, specifies the bank to read from
+;parameter bank2: a num, 0-9, specifies the bank to write to
+;parameter byte1: a num, 0-255, specifies the byte to read from
+;parameter byte2: a num, 0-255, specifies the byte to write to
+cp 0x00 0 1
+
+;Add command usage:
+;add 0x<bank1><bank2> <byte1> <byte2>
+;parameter bank1: a num, 0-9, specifies the bank to read byte1 from
+;parameter bank2: a num, 0-9, specifies the bank to read byte2 from
+;parameter byte1: a num, 0-255, specifies the byte to read in bank1
+;parameter byte2: a num, 0-255, specifies the byte to read in bank2
+;notes: it replaces byte1 with the result, consider copying byte1 to another byte if you dont want to lose it
+add 0x00 0 1
+
+;Serial print command usage:
+;cp 0x<bank> <byte> <mode>
+;parameter bank: a num, 0-9, specifies the bank to read from
+;parameter byte: a num, 0-255, specifies the byte to read from
+;parameter mode: a num, 0-6, specifies the mode to print with, 
+;                       0 prints a hexadecimal number
+;                       1 prints an int
+;                       2 prints a char
+;                       3 prints a hexadecimal number with newline
+;                       4 prints an int with newline
+;                       5 prints a char with newline
+;                       6 prints a newline, ignores other params
+spr 0x00 0 1

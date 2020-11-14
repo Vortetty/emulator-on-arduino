@@ -1,0 +1,13 @@
+#ruledef
+{
+    set {bank} {byte} {value}   => 0x01 @ bank`8 @ byte`8 @ value`8
+    cp {banks} {byte1} {byte2}  => 0x02 @ banks`8 @ byte1`8 @ byte2`8
+	add {banks} {byte1} {byte2} => 0x03 @ banks`8 @ byte1`8 @ byte2`8
+	spr {bank} {byte} {mode}    => 0x04 @ bank`8 @ byte`8 @ mode`8
+}
+
+
+set 0 0 32
+set 0 1 1
+add 0 0 1
+spr 0 0 3

@@ -1,0 +1,41 @@
+#include <EEPROM.h>
+#include "commands.hpp"
+
+const int maxProgramBytes = 768;
+char code[maxProgramBytes];
+
+void parseCommand(byte command[4]){
+    funcmap[command[0]](command[1], command[2], command[3]);
+}
+
+void setup() {
+    pinMode(13, OUTPUT);
+    int x = 0;
+    while(x < maxProgramBytes){
+        code[x] = EEPROM.read(x);
+        x++;
+    }
+    initSerial();
+    digitalWrite(13, HIGH);
+
+    for (int i = 0; i < maxProgramBytes; i += 4)
+    {
+        byte command[4]{
+            code[i],
+            code[1+i],
+            code[2+i],
+            code[3+i]
+        }; 
+        parseCommand(command);
+        /*Serial.print(command[0], HEX);
+        Serial.print(" ");
+        Serial.print(command[1], HEX);
+        Serial.print(" ");
+        Serial.print(command[2], HEX);
+        Serial.print(" ");
+        Serial.println(command[3], HEX);*/
+    }
+    digitalWrite(13, LOW);
+}
+
+void loop(){}
