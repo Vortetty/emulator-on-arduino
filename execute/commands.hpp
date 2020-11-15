@@ -96,5 +96,6 @@ commandPair funcmap[] = {
     commandPair(4, *set),
     commandPair(4, *copy),
     commandPair(4, *add),
-    commandPair(4, *printSerial)
+    commandPair(4, *printSerial),
+    commandPair(255, *doNothing)
 };

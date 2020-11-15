@@ -4,7 +4,11 @@ String dataAsStr = "01 00 00 20  01 00 01 01  03 00 00 01  04 00 00 03";
 
 //replace with the c hex array output from https://hlorenzi.github.io/customasm/web/
 const unsigned char data[] = {
-	/* 0x0 */ 0x01, 0x00, 0x00, 0x20, 0x01, 0x00, 0x01, 0x01, 0x03, 0x00, 0x00, 0x01, 0x04, 0x00, 0x00, 0x03
+	0x01, 0x00, 0x00, 0x20, 
+    0x01, 0x00, 0x01, 0x01, 
+    0x03, 0x00, 0x00, 0x01, 
+    0x04, 0x00, 0x00, 0x03,
+    0x05, 0x00, 0x0C, 0x00
 };
 
 const int maxProgramBytes = sizeof(data)/sizeof(data[0]);
@@ -17,6 +21,18 @@ byte* scanCommand(int* index, byte *command){
     int i = *index;
 
     switch (funcmap[data[i]].params){
+        case 255: {
+            Serial.print("Selected Jump to ");
+            *index += 4;
+            Serial.print((data[1+i] << 8) | data[2+i], HEX);
+            Serial.print(" ");
+            Serial.print((data[1+i] << 8) | data[2+i], DEC);
+            Serial.print("  ");
+            
+            *index = (data[1+i] << 8) | data[2+i];
+            break;
+        }
+
         case 4: {
             Serial.print("Selected 4  ");
             *index += 4;
@@ -92,7 +108,9 @@ void setup() {
             delay(10);
         }
         Serial.println(" command " + String((i/4)));
-        parseCommand(command);
+        if (command[0] != 255){
+            parseCommand(command);
+        }
         /*Serial.print(command[0], HEX);
         Serial.print(" ");
         Serial.print(command[1], HEX);
