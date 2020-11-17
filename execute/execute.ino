@@ -8,7 +8,8 @@ const unsigned char data[] = {
     0x01, 0x00, 0x01, 0x01, 
     0x03, 0x00, 0x00, 0x01, 
     0x04, 0x00, 0x00, 0x03,
-    0x05, 0x00, 0x0C, 0x00
+    0x06, 0x01, 0x01, 0x01, 0x00, 0x0C, 0x00, 0x00,
+    0x06, 0x00, 0x01, 0x00, 0x01, 0x00, 0x0C, 0x00
 };
 
 const int maxProgramBytes = sizeof(data)/sizeof(data[0]);
@@ -17,19 +18,82 @@ void parseCommand(byte command[16]){
     funcmap[command[0]].function(command[1], command[2], command[3], command[4], command[5], command[6], command[7], command[8], command[9], command[10], command[11], command[12], command[13], command[14], command[15]);
 }
 
+bool parseConditionalJump(int i){
+    nibblePair banks = splitByte(data[i+1]);
+    byte bank1 = banks.high;
+    byte bank2 = banks.low;
+
+    switch (data[3+i]) { //Conditional jump (== as 00, != as 01, >= as 02, <= as 03, > as 04, < as 05), 8 bytes
+        case 0:
+            if (progRam[bank1][data[2+i]] == progRam[bank2][data[4+i]]) return true;
+            else return false;
+            break;
+
+        case 1:
+            if (progRam[bank1][data[2+i]] != progRam[bank2][data[4+i]]) return true;
+            else return false;
+            break;
+
+        case 2:
+            if (progRam[bank1][data[2+i]] >= progRam[bank2][data[4+i]]) return true;
+            else return false;
+            break;
+
+        case 3:
+            if (progRam[bank1][data[2+i]] <= progRam[bank2][data[4+i]]) return true;
+            else return false;
+            break;
+
+        case 4:
+            if (progRam[bank1][data[2+i]] > progRam[bank2][data[4+i]]) return true;
+            else return false;
+            break;
+
+        case 5:
+            if (progRam[bank1][data[2+i]] < progRam[bank2][data[4+i]]) return true;
+            else return false;
+            break;
+
+        default:
+            return false;
+            break;
+    }
+}
+
 byte* scanCommand(int* index, byte *command){
     int i = *index;
 
     switch (funcmap[data[i]].params){
-        case 255: {
+        case 255: { //An always jump
             Serial.print("Selected Jump to ");
             *index += 4;
             Serial.print((data[1+i] << 8) | data[2+i], HEX);
-            Serial.print(" ");
+            Serial.print(" (");
             Serial.print((data[1+i] << 8) | data[2+i], DEC);
-            Serial.print("  ");
+            Serial.print(")  ");
             
             *index = (data[1+i] << 8) | data[2+i];
+            break;
+        }
+
+        case 254: { //Conditional jump (== as 00, != as 01, >= as 02, <= as 03, > as 04, < as 05), 8 bytes
+            Serial.print("Selected Conditional Jump to ");
+            *index += 8;
+
+            Serial.print((data[5+i] << 8) | data[6+i], HEX);
+            Serial.print(" (");
+            Serial.print((data[5+i] << 8) | data[6+i], DEC);
+            Serial.print(")  ");
+            
+            bool canGo = parseConditionalJump(i);
+            
+            if (canGo){
+                *index = (data[6+i] << 8) | data[6+i];
+                Serial.print("Check Succeeded, jumping  ");
+            } else {
+                Serial.print("Check Failed, proceeding  ");
+            }
+
             break;
         }
 
@@ -108,7 +172,7 @@ void setup() {
             delay(10);
         }
         Serial.println(" command " + String((i/4)));
-        if (command[0] != 255){
+        if (command[0] < 200){
             parseCommand(command);
         }
         /*Serial.print(command[0], HEX);
