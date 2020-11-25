@@ -2,15 +2,8 @@
 
 String dataAsStr = "01 00 00 20  01 00 01 01  03 00 00 01  04 00 00 03";
 
-//replace with the c hex array output from https://hlorenzi.github.io/customasm/web/
-const unsigned char data[] = {
-	0x01, 0x00, 0x00, 0x20, 
-    0x01, 0x00, 0x01, 0x01, 
-    0x03, 0x00, 0x00, 0x01, 
-    0x04, 0x00, 0x00, 0x03,
-    0x06, 0x00, 0x01, 0x01, 0x01, 0x00, 0x0C, 0x00,
-    0x06, 0x00, 0x01, 0x00, 0x01, 0x00, 0x0C, 0x00
-};
+#define DRAWING
+#include "programs.hpp"
 
 const int maxProgramBytes = sizeof(data)/sizeof(data[0]);
 
@@ -88,7 +81,7 @@ byte* scanCommand(int* index, byte *command){
             bool canGo = parseConditionalJump(i);
             
             if (canGo){
-                *index = (data[6+i] << 8) | data[6+i];
+                *index = (data[5+i] << 8) | data[6+i];
                 Serial.print("Check Succeeded, jumping  ");
             } else {
                 Serial.print("Check Failed, proceeding  ");
@@ -156,7 +149,7 @@ byte* scanCommand(int* index, byte *command){
 }
 
 void setup() {
-    Serial.begin(9600);
+    initExecutionEngine();
     delay(1000);
     Serial.println("-------------------------------------");
     delay(1000);
