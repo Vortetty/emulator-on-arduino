@@ -1,8 +1,7 @@
 #include "commands.hpp"
 
-String dataAsStr = "01 00 00 20  01 00 01 01  03 00 00 01  04 00 00 03";
-
 #define DRAWING
+//#define LOOP_SERIAL_SERVO
 #include "programs.hpp"
 
 const int maxProgramBytes = sizeof(data)/sizeof(data[0]);

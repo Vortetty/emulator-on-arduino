@@ -6,8 +6,23 @@
 
 
 #define USE_CGA
+#define USE_SWEETIE_16
+#define USE_NATURES_EMBRACE
 #include "palettes.hpp"
 uint16_t drawcolor = 0x0000; // the color the tft will draw with
+uint16_t tempPalette[16]; // a temp variable
+
+void setTempPal(byte palette) {
+    switch (palette) {
+        case 0:
+            memcpy(&tempPalette, &cga, sizeof(cga));
+            break;
+
+        case 1:
+            memcpy(&tempPalette, &sweetie, sizeof(cga));
+            break;
+    }
+}
 
 // init the tft,    CS, CD, WR, RD, RST 
 Adafruit_TFTLCD tft(A3, A2, A1, A0, A4);
@@ -172,11 +187,8 @@ void doNothing(byte _0, byte _1, byte _2, byte _3, byte _4, byte _5, byte _6, by
 
 //sets tft's color from color set specified
 void setTFTColorFromPalette(byte colorIndex, byte palette, byte _2, byte _3, byte _4, byte _5, byte _6, byte _7, byte _8, byte _9, byte _10, byte _11, byte _12, byte _13, byte _14){
-    switch (palette) {
-        case 0:
-            drawcolor = cga[colorIndex];
-            break;
-    }
+    setTempPal(palette);
+    drawcolor = tempPalette[colorIndex];
 }
 
 //sets tft's color to specified custom color
@@ -200,27 +212,24 @@ void rect(byte x1high, byte x1low, byte y1high, byte y1low, byte widthHigh, byte
 }
 
 void testPalette(byte palette, byte _1, byte _2, byte _3, byte _4, byte _5, byte _6, byte _7, byte _8, byte _9, byte _10, byte _11, byte _12, byte _13, byte _14){
-    switch (palette) {
-        case 0:
-            tft.setTextSize(2);
-            tft.setTextWrap(false);
-            int z = 0;
-            for(int x = 0; x < 4; x++){
-                for(int y = 0; y < 4; y++){
-                    tft.fillRect(x*320/4, y*240/4, 320/4, 240/4, cga[z]);
-                    tft.setTextColor(~cga[z]);
+    setTempPal(palette);
+    
+    tft.setTextSize(2);
+    tft.setTextWrap(false);
+    int z = 0;
+    for(int x = 0; x < 4; x++){
+        for(int y = 0; y < 4; y++){
+            tft.fillRect(x*320/4, y*240/4, 320/4, 240/4, tempPalette[z]);
+            tft.setTextColor(~tempPalette[z]);
 
-                    tft.setCursor(5+x*320/4, 5+y*240/4);
-                    String hexCode = String(cga[z], HEX);
+            tft.setCursor(5+x*320/4, 5+y*240/4);
+            String hexCode = String(tempPalette[z], HEX);
+            for(; hexCode.length() < 4; hexCode = "0"+hexCode){} //just some jank to pas with zeroes
+                
+            tft.print("#" + hexCode);
 
-                    for(; hexCode.length() < 4; hexCode = "0"+hexCode){}
-
-                    tft.print("#" + hexCode);
-
-                    z++;
-                }
-            }
-            break;
+            z++;
+        }
     }
 }
 
@@ -246,6 +255,39 @@ void circ(byte x1high, byte x1low, byte y1high, byte y1low, byte radius, byte fi
     }
 }
 
+void text(byte strBank, byte strOffset, byte consumeBytes, byte x1high, byte x1low, byte y1high, byte y1low, byte textSize, byte wrap, byte newline, byte moveCursor, byte _11, byte _12, byte _13, byte _14){
+    tft.setTextWrap(wrap);
+    tft.setTextSize(textSize);
+    tft.setTextColor(drawcolor);
+
+    switch (moveCursor){
+        case 0:
+            break;
+
+        case 1:
+            tft.setCursor(x1high<<8|x1low, y1high<<8|y1low);
+    }
+
+    switch (newline){
+        case 0:
+            for (int i = 0; i < consumeBytes; i++){
+                tft.print(
+                    (char)progRam[strBank][strOffset + i]
+                );
+            }
+            break;
+        
+        case 1:
+            for (int i = 0; i < consumeBytes; i++){
+                tft.print(
+                    (char)progRam[strBank][strOffset + i]
+                );
+            }
+            tft.println("");
+            break;
+    }
+}
+
 
 //map bytes to functions, makes bytecode parsing simple
 commandPair funcmap[] = {
@@ -254,8 +296,8 @@ commandPair funcmap[] = {
     commandPair(4, *copy), //Subtract 2 bytes and replace the first
     commandPair(4, *add), //Sdd 2 bytes and replace the first
     commandPair(4, *printSerial), //Print byte over serial
-    commandPair(255, *doNothing), //Always jump
-    commandPair(254, *doNothing), //Conditional jump
+    commandPair(255, *doNothing), //Always jump. requires logic in execute.ino
+    commandPair(254, *doNothing), //Conditional jump. requires logic in execute.ino
     commandPair(4, *wait), //A delay
     commandPair(4, *servoInit), //Inits the servo
     commandPair(4, *servoKill), //Kills the connection by disabling pwm
@@ -267,5 +309,6 @@ commandPair funcmap[] = {
     commandPair(16, *rect), //draws a rectangle
     commandPair(16, *tri), //draws a triangle
     commandPair(8, *circ), //draws a circle
+    commandPair(16, *text), //draws text from memory. if the bytes to consume overflows, you may end up with undefined behavior due to it displaying raw ram
     commandPair(4, *testPalette) //tests specified palette
 };
